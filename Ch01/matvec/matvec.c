@@ -8,31 +8,31 @@ int main(void) {
   cl_context context = createContext(device);
   cl_program program = createProgram(context, device);
   cl_kernel kernel = createKernel(program);
-  cl_command_queue queue = createCommandQueue(context, device);
+  cl_command_queue cmdQueue = createCommandQueue(context, device);
 
-  // data to be processed by the kernel
-  float mat[16];
-  for (cl_int i = 0; i < 16; i++) {
-    mat[i] = i * 2.0f;
+  // input data
+  float matrix[16];
+  for (int i = 0; i < 16; i++) {
+    matrix[i] = i * 2.0f;
   }
 
-  float vec[4];
-  for (cl_int i = 0; i < 4; i++) {
-    vec[i] = i * 3.0f;
+  float vector[4];
+  for (int i = 0; i < 4; i++) {
+    vector[i] = i * 3.0f;
   }
 
-  // write to device
-  cl_mem mat_buff = createMatrixBuffer(context, mat);
-  cl_mem vec_buff = createVectorBuffer(context, vec);
-  cl_mem res_buff = createResultBuffer(context);
+  // create memory objects and write to device
+  cl_mem matrixBuf = createMatrixBuffer(context, matrix);
+  cl_mem vectorBuf = createVectorBuffer(context, vector);
+  cl_mem resultBuf = createResultBuffer(context);
 
-  runKernel(kernel, queue, mat_buff, vec_buff, res_buff);
+  execKernel(kernel, cmdQueue, matrixBuf, vectorBuf, resultBuf);
 
   // read from device
   float result[4];
-  readResult(queue, res_buff, result);
+  readResult(cmdQueue, resultBuf, result);
 
-  testResult(mat, vec, result);
+  testResult(matrix, vector, result);
 
-  releaseResources(platform, context, device, queue, program, kernel, mat_buff, vec_buff, res_buff);
+  releaseResources(platform, context, device, cmdQueue, program, kernel, matrixBuf, vectorBuf, resultBuf);
 }
