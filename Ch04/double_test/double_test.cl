@@ -3,16 +3,16 @@
 #pragma OPENCL EXTENSION cl_khr_fp64: enable
 #endif
 
-__kernel void double_test(__global float* a,
-                          __global float* b,
-                          __global float* out) {
+kernel void double_test(global float* a,
+                        global float* b,
+                        global float* out)
+{
+/* Declare a double variable if possible. */
+/* Use floats if doubles are unavailable. */
 
-/* Declare a double variable if possible */
 #ifdef FP_64
    double c = (double)(*a / *b);
    *out = (float)c;
-   
-/* Use floats if doubles are unavailable */
 #else
    *out = *a * *b;
 #endif

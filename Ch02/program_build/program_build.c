@@ -1,106 +1,85 @@
-#define _CRT_SECURE_NO_WARNINGS
-#define NUM_FILES 2
-#define PROGRAM_FILE_1 "good.cl"
-#define PROGRAM_FILE_2 "bad.cl"
-
+#include <CL/cl.h>
+#include <CL/cl_platform.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 
-#ifdef MAC
-#include <OpenCL/cl.h>
-#else
-#include <CL/cl.h>
-#endif
+#define NUM_FILES 2
+#define PROGRAM_FILE_1 "good.cl"
+#define PROGRAM_FILE_2 "bad.cl"
 
-int main() {
+cl_int err; // OpenCL errors
 
-   /* Host/device data structures */
-   cl_platform_id platform;
-   cl_device_id device;
-   cl_context context;
-   cl_int i, err;
+void handleError(char *message) {
+  if (err) {
+    perror(message);
+    exit(EXIT_FAILURE);
+  }
+}
 
-   /* Program data structures */
-   cl_program program;
-   FILE *program_handle;
-   char *program_buffer[NUM_FILES];
-   char *program_log;
-   const char *file_name[] = {PROGRAM_FILE_1, PROGRAM_FILE_2};
-   const char options[] = "-cl-finite-math-only -cl-no-signed-zeros";  
-   size_t program_size[NUM_FILES];
-   size_t log_size;
+void printProgramLog(cl_program program, cl_device_id device) {
+  /* Find size of log and print to std output */
+  size_t log_size;
+  clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+  char *program_log = (char *)malloc(log_size + 1);
+  program_log[log_size] = '\0';
+  clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size + 1, program_log, NULL);
+  printf("%s\n", program_log);
+  free(program_log);
+  exit(EXIT_FAILURE);
+}
 
-   /* Access the first installed platform */
-   err = clGetPlatformIDs(1, &platform, NULL);
-   if(err < 0) {
-      perror("Couldn't find any platforms");
-      exit(1);
-   }
+int main(void) {
 
-   /* Access the first GPU/CPU */
-   err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
-   if(err == CL_DEVICE_NOT_FOUND) {
-      err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_CPU, 1, &device, NULL);
-   }
-   if(err < 0) {
-      perror("Couldn't find any devices");
-      exit(1);
-   }
+  /* Access the first installed platform */
+  cl_platform_id platform;
+  err = clGetPlatformIDs(1, &platform, NULL);
+  handleError("Couldn't find any platforms");
 
-   /* Create a context */
-   context = clCreateContext(NULL, 1, &device, NULL, NULL, &err);
-   if(err < 0) {
-      perror("Couldn't create a context");
-      exit(1);   
-   }
+  /* Access the first GPU/CPU */
+  cl_device_id device;
+  err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
+  if (err == CL_DEVICE_NOT_FOUND) {
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_CPU, 1, &device, NULL);
+  }
+  handleError("Couldn't find any devices");
 
-   /* Read each program file and place content into buffer array */
-   for(i=0; i<NUM_FILES; i++) {
+  /* Create a context */
+  cl_context context = clCreateContext(NULL, 1, &device, NULL, NULL, &err);
+  handleError("Couldn't create a context");
 
-      program_handle = fopen(file_name[i], "r");
-      if(program_handle == NULL) {
-         perror("Couldn't find the program file");
-         exit(1);   
-      }
-      fseek(program_handle, 0, SEEK_END);
-      program_size[i] = ftell(program_handle);
-      rewind(program_handle);
-      program_buffer[i] = (char*)malloc(program_size[i]+1);
-      program_buffer[i][program_size[i]] = '\0';
-      fread(program_buffer[i], sizeof(char), program_size[i], 
-            program_handle);
-      fclose(program_handle);
-   }
+  /* Read each program file and place content into buffer array */
+  char *program_buffer[NUM_FILES];
+  const char *file_name[] = {PROGRAM_FILE_1, PROGRAM_FILE_2};
+  size_t program_size[NUM_FILES];
+  for (cl_int i = 0; i < NUM_FILES; i++) {
+    FILE *program_handle = fopen(file_name[i], "r");
+    err = !program_handle;
+    handleError("Couldn't find the program file");
+    fseek(program_handle, 0, SEEK_END);
+    program_size[i] = ftell(program_handle);
+    rewind(program_handle);
+    program_buffer[i] = (char *)malloc(program_size[i] + 1);
+    program_buffer[i][program_size[i]] = '\0';
+    fread(program_buffer[i], sizeof(char), program_size[i], program_handle);
+    fclose(program_handle);
+  }
 
-   /* Create a program containing all program content */
-   program = clCreateProgramWithSource(context, NUM_FILES, 			
-         (const char**)program_buffer, program_size, &err);				
-   if(err < 0) {
-      perror("Couldn't create the program");
-      exit(1);   
-   }
+  /* Create a program containing all program content */
+  cl_program program = clCreateProgramWithSource(context, NUM_FILES, (const char **)program_buffer, program_size, &err);
+  handleError("Couldn't create the program");
 
-   /* Build program */
-   err = clBuildProgram(program, 1, &device, options, NULL, NULL);		
-   if(err < 0) {
+  /* Build program */
+  const char options[] = "-cl-finite-math-only -cl-no-signed-zeros";
+  err = clBuildProgram(program, 1, &device, options, NULL, NULL);
+  if (err < 0) {
+    printProgramLog(program, device);
+  }
 
-      /* Find size of log and print to std output */
-      clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 
-            0, NULL, &log_size);
-      program_log = (char*) malloc(log_size+1);
-      program_log[log_size] = '\0';
-      clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 
-            log_size+1, program_log, NULL);
-      printf("%s\n", program_log);
-      free(program_log);
-      exit(1);
-   }
-   
-   /* Deallocate resources */
-   for(i=0; i<NUM_FILES; i++) {
-      free(program_buffer[i]);
-   }
-   clReleaseProgram(program);
-   clReleaseContext(context);
+  /* Deallocate resources */
+  for (cl_int i = 0; i < NUM_FILES; i++) {
+    free(program_buffer[i]);
+  }
+  clReleaseProgram(program);
+  clReleaseContext(context);
 }

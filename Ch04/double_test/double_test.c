@@ -1,207 +1,151 @@
-#define _CRT_SECURE_NO_WARNINGS
-#define PROGRAM_FILE "double_test.cl"
-#define KERNEL_FUNC "double_test"
-
+#include <CL/cl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef MAC
-#include <OpenCL/cl.h>
-#else
-#include <CL/cl.h>
-#endif
+#define PROGRAM_FILE "double_test.cl"
+#define KERNEL_FUNC "double_test"
+
+cl_int err;
+
+void handleError(char *message) {
+  if (err) {
+    perror(message);
+    exit(EXIT_FAILURE);
+  }
+}
 
 /* Find a GPU or CPU associated with the first available platform */
-cl_device_id create_device() {
+cl_device_id getDevice() {
 
-   cl_platform_id platform;
-   cl_device_id dev;
-   int err;
+  /* Identify a platform */
+  cl_platform_id platform;
+  err = clGetPlatformIDs(1, &platform, NULL);
+  handleError("Couldn't find any platforms");
 
-   /* Identify a platform */
-   err = clGetPlatformIDs(1, &platform, NULL);
-   if(err < 0) {
-      perror("Couldn't identify a platform");
-      exit(1);
-   } 
+  /* Access a device */
+  cl_device_id dev;
+  err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &dev, NULL);
+  if (err == CL_DEVICE_NOT_FOUND) {
+    err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_CPU, 1, &dev, NULL);
+  }
+  handleError("Couldn't find any devices");
 
-   /* Access a device */
-   err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &dev, NULL);
-   if(err == CL_DEVICE_NOT_FOUND) {
-      err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_CPU, 1, &dev, NULL);
-   }
-   if(err < 0) {
-      perror("Couldn't access any devices");
-      exit(1);   
-   }
+  return dev;
+}
 
-   return dev;
+void printProgramLog(cl_program program, cl_device_id device) {
+
+  /* Find size of log and print to std output */
+  size_t log_size;
+  clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+  char *program_log = (char *)malloc(log_size + 1);
+  program_log[log_size] = '\0';
+  clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size + 1, program_log, NULL);
+  printf("%s\n", program_log);
+  free(program_log);
+  exit(EXIT_FAILURE);
 }
 
 /* Create program from a file and compile it */
-cl_program build_program(cl_context ctx, cl_device_id dev, 
-      const char* filename, char* options) {
+cl_program buildProgram(cl_context ctx, cl_device_id dev, const char *filename, char *options) {
 
-   cl_program program;
-   FILE *program_handle;
-   char *program_buffer, *program_log;
-   size_t program_size, log_size;
-   int err;
+  /* Read program file and place content into buffer */
+  FILE *program_handle = fopen(filename, "r");
+  err = !program_handle;
+  handleError("Couldn't find the program file");
+  fseek(program_handle, 0, SEEK_END);
+  size_t program_size = ftell(program_handle);
+  rewind(program_handle);
+  char *program_buffer = (char *)malloc(program_size + 1);
+  program_buffer[program_size] = '\0';
+  fread(program_buffer, sizeof(char), program_size, program_handle);
+  fclose(program_handle);
 
-   /* Read program file and place content into buffer */
-   program_handle = fopen(filename, "r");
-   if(program_handle == NULL) {
-      perror("Couldn't find the program file");
-      exit(1);
-   }
-   fseek(program_handle, 0, SEEK_END);
-   program_size = ftell(program_handle);
-   rewind(program_handle);
-   program_buffer = (char*)malloc(program_size + 1);
-   program_buffer[program_size] = '\0';
-   fread(program_buffer, sizeof(char), program_size, program_handle);
-   fclose(program_handle);
+  /* Create program from file */
+  cl_program program = clCreateProgramWithSource(ctx, 1, (const char **)&program_buffer, &program_size, &err);
+  handleError("Couldn't create the program");
+  free(program_buffer);
 
-   /* Create program from file */
-   program = clCreateProgramWithSource(ctx, 1, 
-      (const char**)&program_buffer, &program_size, &err);
-   if(err < 0) {
-      perror("Couldn't create the program");
-      exit(1);
-   }
-   free(program_buffer);
+  /* Build program */
+  err = clBuildProgram(program, 0, NULL, options, NULL, NULL);
+  if (err) {
+    printProgramLog(program, dev);
+  }
 
-   /* Build program */
-   err = clBuildProgram(program, 0, NULL, options, NULL, NULL);
-   if(err < 0) {
-
-      /* Find size of log and print to std output */
-      clGetProgramBuildInfo(program, dev, CL_PROGRAM_BUILD_LOG, 
-            0, NULL, &log_size);
-      program_log = (char*) malloc(log_size + 1);
-      program_log[log_size] = '\0';
-      clGetProgramBuildInfo(program, dev, CL_PROGRAM_BUILD_LOG, 
-            log_size + 1, program_log, NULL);
-      printf("%s\n", program_log);
-      free(program_log);
-      exit(1);
-   }
-
-   return program;
+  return program;
 }
 
-int main() {
+int main(void) {
 
-   /* OpenCL data structures */
-   cl_device_id device;
-   cl_context context;
-   cl_command_queue queue;
-   cl_program program;;
-   cl_kernel kernel;
-   cl_int err;
+  /* Create a device and context */
+  cl_device_id device = getDevice();
+  cl_context context = clCreateContext(NULL, 1, &device, NULL, NULL, &err);
+  handleError("Couldn't create a context");
 
-   /* Data and buffers */
-   float a = 6.0, b = 2.0, result;
-   cl_mem a_buffer, b_buffer, output_buffer;
+  /* Obtain the device data */
+  cl_uint addr_data;
+  err = clGetDeviceInfo(device, CL_DEVICE_ADDRESS_BITS, sizeof(addr_data), &addr_data, NULL);
+  handleError("Couldn't read extension data");
+  printf("Address width: %u\n", addr_data);
 
-   /* Extension data */
-   cl_uint addr_data;
-   char* ext_data;
-   char fp64_ext[] = "cl_khr_fp64";
-   size_t ext_size;
-   char options[20] = "";
+  /* Define "FP_64" option if doubles are supported */
+  char *ext_data;
+  size_t ext_size;
+  clGetDeviceInfo(device, CL_DEVICE_EXTENSIONS, sizeof(ext_data), NULL, &ext_size);
+  ext_data = (char *)malloc(ext_size + 1);
+  ext_data[ext_size] = '\0';
+  clGetDeviceInfo(device, CL_DEVICE_EXTENSIONS, ext_size + 1, ext_data, NULL);
+  char fp64_ext[] = "cl_khr_fp64";
+  char options[20] = "";
+  if (strstr(ext_data, fp64_ext)) {
+    printf("The %s extension is supported.\n", fp64_ext);
+    strcat(options, "-DFP_64 ");
+  } else
+    printf("The %s extension is not supported.\n", fp64_ext);
+  free(ext_data);
 
-   /* Create a device and context */
-   device = create_device();
-   context = clCreateContext(NULL, 1, &device, NULL, NULL, &err);
-   if(err < 0) {
-      perror("Couldn't create a context");
-      exit(1);   
-   }
-   
-   /* Obtain the device data */
-   if(clGetDeviceInfo(device, CL_DEVICE_ADDRESS_BITS, 
-         sizeof(addr_data), &addr_data, NULL) < 0) {
-      perror("Couldn't read extension data");
-      exit(1);
-   }    
-   printf("Address width: %u\n", addr_data);
+  /* Build the program and create the kernel */
+  cl_program program = buildProgram(context, device, PROGRAM_FILE, options);
+  cl_kernel kernel = clCreateKernel(program, KERNEL_FUNC, &err);
+  handleError("Couldn't create a kernel");
 
-   /* Define "FP_64" option if doubles are supported */
-   clGetDeviceInfo(device, CL_DEVICE_EXTENSIONS, 
-         sizeof(ext_data), NULL, &ext_size);
-   ext_data = (char*)malloc(ext_size + 1);
-   ext_data[ext_size] = '\0';
-   clGetDeviceInfo(device, CL_DEVICE_EXTENSIONS, 
-         ext_size + 1, ext_data, NULL);
-   if(strstr(ext_data, fp64_ext) != NULL) {
-      printf("The %s extension is supported.\n", fp64_ext);
-      strcat(options, "-DFP_64 ");
-   }
-   else
-      printf("The %s extension is not supported.\n", fp64_ext);
-   free(ext_data);
+  /* Create CL buffers to hold input and output data */
+  float a = 6.0;
+  float b = 2.0;
+  cl_mem a_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(float), &a, &err);
+  handleError("Couldn't create a memory object");
+  cl_mem b_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(float), &b, &err);
+  handleError("Couldn't create a memory object");
+  cl_mem output_buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(float), NULL, &err);
+  handleError("Couldn't create a memory object");
 
-   /* Build the program and create the kernel */
-   program = build_program(context, device, PROGRAM_FILE, options);
-   kernel = clCreateKernel(program, KERNEL_FUNC, &err);
-   if(err < 0) {
-      perror("Couldn't create a kernel");
-      exit(1);   
-   };
+  /* Create kernel arguments */
+  err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &a_buffer);
+  err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &b_buffer);
+  err |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &output_buffer);
+  handleError("Couldnt create a memory object");
 
-   /* Create CL buffers to hold input and output data */
-   a_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | 
-         CL_MEM_COPY_HOST_PTR, sizeof(float), &a, &err);
-   if(err < 0) {
-      perror("Couldn't create a memory object");
-      exit(1);   
-   };
-   b_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY | 
-         CL_MEM_COPY_HOST_PTR, sizeof(float), &b, NULL);
-   output_buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, 
-         sizeof(float), NULL, NULL);
+  /* Create a command queue */
+  cl_command_queue queue = clCreateCommandQueueWithProperties(context, device, NULL, &err);
+  handleError("Couldn't create a command queue");
 
-   /* Create kernel arguments */
-   err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &a_buffer);
-   if(err < 0) {
-      perror("Couldn't set a kernel argument");
-      exit(1);   
-   };
-   clSetKernelArg(kernel, 1, sizeof(cl_mem), &b_buffer);
-   clSetKernelArg(kernel, 2, sizeof(cl_mem), &output_buffer);
+  /* Enqueue kernel */
+  err = clEnqueueTask(queue, kernel, 0, NULL, NULL);
+  handleError("Couldn't enqueue the kernel");
 
-   /* Create a command queue */
-   queue = clCreateCommandQueue(context, device, 0, &err);
-   if(err < 0) {
-      perror("Couldn't create a command queue");
-      exit(1);   
-   };
+  /* Read and print the result */
+  float result;
+  err = clEnqueueReadBuffer(queue, output_buffer, CL_TRUE, 0, sizeof(float), &result, 0, NULL, NULL);
+  handleError("Couldn't read the output buffer");
+  printf("The kernel result is %f\n", result);
 
-   /* Enqueue kernel */
-   err = clEnqueueTask(queue, kernel, 0, NULL, NULL);
-   if(err < 0) {
-      perror("Couldn't enqueue the kernel");
-      exit(1);   
-   }
-
-   /* Read and print the result */
-   err = clEnqueueReadBuffer(queue, output_buffer, CL_TRUE, 0, 
-      sizeof(float), &result, 0, NULL, NULL);
-   if(err < 0) {
-      perror("Couldn't read the output buffer");
-      exit(1);   
-   }
-   printf("The kernel result is %f\n", result);   
-
-   /* Deallocate resources */
-   clReleaseMemObject(a_buffer);
-   clReleaseMemObject(b_buffer);
-   clReleaseMemObject(output_buffer);
-   clReleaseKernel(kernel);
-   clReleaseCommandQueue(queue);
-   clReleaseProgram(program);
-   clReleaseContext(context);
-   return 0;
+  /* Deallocate resources */
+  clReleaseMemObject(a_buffer);
+  clReleaseMemObject(b_buffer);
+  clReleaseMemObject(output_buffer);
+  clReleaseKernel(kernel);
+  clReleaseCommandQueue(queue);
+  clReleaseProgram(program);
+  clReleaseContext(context);
 }

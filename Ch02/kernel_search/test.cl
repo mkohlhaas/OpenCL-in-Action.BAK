@@ -1,27 +1,23 @@
-__kernel void add(__global float *a,
-                  __global float *b,
-                  __global float *c) {
-   
+kernel void add(global float *a,
+                global float *b,
+                global float *c) {
    *c = *a + *b;
 }
 
-__kernel void sub(__global float *a,
-                  __global float *b,
-                  __global float *c) {
-   
+kernel void sub(global float *a,
+                global float *b,
+                global float *c) {
    *c = *a - *b;
 }
 
-__kernel void mult(__global float *a,
-                   __global float *b,
-                   __global float *c) {
-   
+kernel void mult(global float *a,
+                 global float *b,
+                 global float *c) {
    *c = *a * *b;
 }
 
-__kernel void div(__global float *a,
-                  __global float *b,
-                  __global float *c) {
-   
+kernel void div(global float *a,
+                global float *b,
+                global float *c) {
    *c = *a / *b;
 }
