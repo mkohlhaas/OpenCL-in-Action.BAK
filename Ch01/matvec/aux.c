@@ -36,7 +36,6 @@ cl_context createContext(cl_device_id device) {
 }
 
 void printProgramBuildLog(cl_program program, cl_device_id device) {
-
   // get size of build log
   size_t logSize;
   clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, NULL, &logSize);
@@ -113,10 +112,12 @@ void execKernel(cl_kernel kernel, cl_command_queue cmdQueue, cl_mem matrixBuf, c
   cl_int err;
 
   // set arguments
-  err = clSetKernelArg(kernel, 0, sizeof(cl_mem), &matrixBuf);
+  // clang-format off
+  err  = clSetKernelArg(kernel, 0, sizeof(cl_mem), &matrixBuf);
   err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &vectorBuf);
   err |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &resultBuf);
   handleError(err, "Couldn't set kernel arguments.");
+  // clang-format on
 
   // enqueue kernel
   size_t globalWorkSize = 4;
@@ -149,16 +150,16 @@ void testResult(float *mat, float *vec, float *result) {
     printf("Matrix-vector multiplication NOT successful!\n");
   }
 }
-// clang-format on
 
-void releaseResources(cl_context context, cl_device_id device, cl_command_queue cmdQueue, cl_program program,
-                      cl_kernel kernel, cl_mem matrixBuf, cl_mem vectorBuf, cl_mem resultBuf) {
+// clang-format on
+void releaseResources(cl_device_id device, cl_context context, cl_program program, cl_kernel kernel,
+                      cl_command_queue cmdQueue, cl_mem matrixBuf, cl_mem vectorBuf, cl_mem resultBuf) {
   clReleaseMemObject(matrixBuf);
   clReleaseMemObject(vectorBuf);
   clReleaseMemObject(resultBuf);
+  clReleaseCommandQueue(cmdQueue);
   clReleaseKernel(kernel);
   clReleaseProgram(program);
-  clReleaseCommandQueue(cmdQueue);
-  clReleaseDevice(device);
   clReleaseContext(context);
+  clReleaseDevice(device);
 }

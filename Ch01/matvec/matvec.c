@@ -1,4 +1,5 @@
 #include "aux.h"
+#include <CL/cl.h>
 
 int main(void) {
 
@@ -34,5 +35,5 @@ int main(void) {
 
   testResult(matrix, vector, result);
 
-  releaseResources(platform, context, device, cmdQueue, program, kernel, matrixBuf, vectorBuf, resultBuf);
+  releaseResources(device, context, program, kernel, cmdQueue, matrixBuf, vectorBuf, resultBuf);
 }
