@@ -1,4 +1,5 @@
 #include "aux.h"
+#include <glib.h>
 #include <stdio.h>
 
 void handleError(cl_int err, char *message) {
@@ -52,9 +53,9 @@ unpackedVersion _unpackVersion(cl_uint version) {
 
 char *versionToStr(cl_uint version) {
   unpackedVersion unpacked = _unpackVersion(version);
-  char *retValue = malloc(50);
-  sprintf(retValue, "%u.%u.%u", unpacked.major, unpacked.minor, unpacked.patch);
-  return retValue;
+  GString *retValue = g_string_new(NULL);
+  g_string_append_printf(retValue, "%u.%u.%u", unpacked.major, unpacked.minor, unpacked.patch);
+  return g_string_free(retValue, FALSE);
 }
 
 cl_ulong getPlatformHostTimerResolution(cl_platform_id platform) {
