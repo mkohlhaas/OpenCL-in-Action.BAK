@@ -15,3 +15,5 @@ link_directories(${GLIB2_LIBRARY_DIRS})
 link_libraries(${GLIB2_LIBRARIES})
 
 add_subdirectory(Ch01/matvec/)
+add_subdirectory(Ch02/contextCount/)
+add_subdirectory(Ch02/kernelSearch/)

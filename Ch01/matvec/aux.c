@@ -22,9 +22,8 @@ cl_platform_id getFirstPlatform() {
 }
 
 cl_device_id getFirstGPUDevice(cl_platform_id platform) {
-  cl_int err;
   cl_device_id device;
-  err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
+  cl_int err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, NULL);
   handleError(err, "Couldn't find any devices.");
   return device;
 }
@@ -152,8 +151,8 @@ void testResult(float *mat, float *vec, float *result) {
 }
 // clang-format on
 
-void releaseResources(cl_platform_id platform, cl_context context, cl_device_id device, cl_command_queue cmdQueue,
-                      cl_program program, cl_kernel kernel, cl_mem matrixBuf, cl_mem vectorBuf, cl_mem resultBuf) {
+void releaseResources(cl_context context, cl_device_id device, cl_command_queue cmdQueue, cl_program program,
+                      cl_kernel kernel, cl_mem matrixBuf, cl_mem vectorBuf, cl_mem resultBuf) {
   clReleaseMemObject(matrixBuf);
   clReleaseMemObject(vectorBuf);
   clReleaseMemObject(resultBuf);
