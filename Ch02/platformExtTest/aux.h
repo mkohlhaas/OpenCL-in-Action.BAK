@@ -1,11 +1,5 @@
 #include <CL/cl.h>
 
-typedef struct {
-  cl_uint major;
-  cl_uint minor;
-  cl_uint patch;
-} unpackedVersion;
-
 char *getPlatformName(cl_platform_id);
 char *getPlatformProfile(cl_platform_id);
 char *getPlatformVendor(cl_platform_id);

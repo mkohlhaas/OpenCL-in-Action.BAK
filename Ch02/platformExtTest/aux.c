@@ -2,6 +2,12 @@
 #include <glib.h>
 #include <stdio.h>
 
+typedef struct {
+  cl_uint major;
+  cl_uint minor;
+  cl_uint patch;
+} unpackedVersion;
+
 void handleError(cl_int err, char *message) {
   if (err) {
     fprintf(stderr, "%s\nError: %d\n", message, err);
@@ -19,19 +25,19 @@ cl_platform_id *getPlatforms(cl_uint *numPlatforms) {
   return platforms;
 }
 
-char *getPlatformInfoChar(cl_platform_id platform, cl_platform_info paramName) {
-  size_t length;
-  cl_int err = clGetPlatformInfo(platform, paramName, 0, NULL, &length);
-  char *str = malloc(sizeof(char) * length);
-  err = clGetPlatformInfo(platform, paramName, length, str, NULL);
+char *getPlatformInfoParam(cl_platform_id platform, cl_platform_info paramName) {
+  size_t paramSize;
+  cl_int err = clGetPlatformInfo(platform, paramName, 0, NULL, &paramSize);
+  char *str = malloc(sizeof(char) * paramSize);
+  err = clGetPlatformInfo(platform, paramName, paramSize, str, NULL);
   handleError(err, "Couldn't get platform info.");
   return str;
 }
 
-char *getPlatformName(cl_platform_id platform) { return getPlatformInfoChar(platform, CL_PLATFORM_NAME); }
-char *getPlatformProfile(cl_platform_id platform) { return getPlatformInfoChar(platform, CL_PLATFORM_PROFILE); }
-char *getPlatformVersion(cl_platform_id platform) { return getPlatformInfoChar(platform, CL_PLATFORM_VERSION); }
-char *getPlatformVendor(cl_platform_id platform) { return getPlatformInfoChar(platform, CL_PLATFORM_VENDOR); }
+char *getPlatformName(cl_platform_id platform) { return getPlatformInfoParam(platform, CL_PLATFORM_NAME); }
+char *getPlatformProfile(cl_platform_id platform) { return getPlatformInfoParam(platform, CL_PLATFORM_PROFILE); }
+char *getPlatformVersion(cl_platform_id platform) { return getPlatformInfoParam(platform, CL_PLATFORM_VERSION); }
+char *getPlatformVendor(cl_platform_id platform) { return getPlatformInfoParam(platform, CL_PLATFORM_VENDOR); }
 
 cl_name_version *getPlatformExtensions(cl_platform_id platform, size_t *numExtensions) {
   cl_int err = clGetPlatformInfo(platform, CL_PLATFORM_EXTENSIONS_WITH_VERSION, 0, NULL, numExtensions);
@@ -59,10 +65,10 @@ char *versionToStr(cl_uint version) {
 }
 
 cl_ulong getPlatformHostTimerResolution(cl_platform_id platform) {
-  size_t length;
+  size_t paramSize;
   cl_ulong timerResolution;
-  cl_int err = clGetPlatformInfo(platform, CL_PLATFORM_HOST_TIMER_RESOLUTION, 0, NULL, &length);
-  err = clGetPlatformInfo(platform, CL_PLATFORM_HOST_TIMER_RESOLUTION, length, &timerResolution, NULL);
+  cl_int err = clGetPlatformInfo(platform, CL_PLATFORM_HOST_TIMER_RESOLUTION, 0, NULL, &paramSize);
+  err = clGetPlatformInfo(platform, CL_PLATFORM_HOST_TIMER_RESOLUTION, paramSize, &timerResolution, NULL);
   handleError(err, "Couldn't get platform host timer resolution.");
   return timerResolution;
 }
