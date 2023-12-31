@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.27)
 
-project(platformExtTest  LANGUAGES C)
+project(lscl LANGUAGES C)
 
 # OpenCL
 add_compile_definitions(CL_TARGET_OPENCL_VERSION=300)
@@ -17,5 +17,5 @@ link_libraries(${GLIB2_LIBRARIES})
 # json-c
 find_package(json-c CONFIG)
 
-add_executable(${PROJECT_NAME} platformExtTest.c aux.c)
+add_executable(${PROJECT_NAME} lscl.c aux.c)
 target_link_libraries(${PROJECT_NAME} PRIVATE json-c::json-c)
