@@ -7,73 +7,72 @@ typedef struct {
   cl_uint patch;
 } unpackedVersion;
 
-void handleError(cl_int err, char *message) {
+static void handleError(cl_int err, char *message) {
   if (err) {
-    // TODO; proper error message for err
-    // CL_SUCCESS
-    // CL_DEVICE_NOT_FOUND
-    // CL_DEVICE_NOT_AVAILABLE
-    // CL_COMPILER_NOT_AVAILABLE
-    // CL_MEM_OBJECT_ALLOCATION_FAILURE
-    // CL_OUT_OF_RESOURCES
-    // CL_OUT_OF_HOST_MEMORY
-    // CL_PROFILING_INFO_NOT_AVAILABLE
-    // CL_MEM_COPY_OVERLAP
-    // CL_IMAGE_FORMAT_MISMATCH
-    // CL_IMAGE_FORMAT_NOT_SUPPORTED
-    // CL_BUILD_PROGRAM_FAILURE
-    // CL_MAP_FAILURE
-    // CL_MISALIGNED_SUB_BUFFER_OFFSET
-    // CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST
-    // CL_COMPILE_PROGRAM_FAILURE
-    // CL_LINKER_NOT_AVAILABLE
-    // CL_LINK_PROGRAM_FAILURE
-    // CL_DEVICE_PARTITION_FAILED
-    // CL_KERNEL_ARG_INFO_NOT_AVAILABLE
-    // CL_INVALID_VALUE
-    // CL_INVALID_DEVICE_TYPE
-    // CL_INVALID_PLATFORM
-    // CL_INVALID_DEVICE
-    // CL_INVALID_CONTEXT
-    // CL_INVALID_QUEUE_PROPERTIES
-    // CL_INVALID_COMMAND_QUEUE
-    // CL_INVALID_HOST_PTR
-    // CL_INVALID_MEM_OBJECT
-    // CL_INVALID_IMAGE_FORMAT_DESCRIPTOR
-    // CL_INVALID_IMAGE_SIZE
-    // CL_INVALID_SAMPLER
-    // CL_INVALID_BINARY
-    // CL_INVALID_BUILD_OPTIONS
-    // CL_INVALID_PROGRAM
-    // CL_INVALID_PROGRAM_EXECUTABLE
-    // CL_INVALID_KERNEL_NAME
-    // CL_INVALID_KERNEL_DEFINITION
-    // CL_INVALID_KERNEL
-    // CL_INVALID_ARG_INDEX
-    // CL_INVALID_ARG_VALUE
-    // CL_INVALID_ARG_SIZE
-    // CL_INVALID_KERNEL_ARGS
-    // CL_INVALID_WORK_DIMENSION
-    // CL_INVALID_WORK_GROUP_SIZE
-    // CL_INVALID_WORK_ITEM_SIZE
-    // CL_INVALID_GLOBAL_OFFSET
-    // CL_INVALID_EVENT_WAIT_LIST
-    // CL_INVALID_EVENT
-    // CL_INVALID_OPERATION
-    // CL_INVALID_GL_OBJECT
-    // CL_INVALID_BUFFER_SIZE
-    // CL_INVALID_MIP_LEVEL
-    // CL_INVALID_GLOBAL_WORK_SIZE
-    // CL_INVALID_PROPERTY
-    // CL_INVALID_IMAGE_DESCRIPTOR
-    // CL_INVALID_COMPILER_OPTIONS
-    // CL_INVALID_LINKER_OPTIONS
-    // CL_INVALID_DEVICE_PARTITION_COUNT
-    // CL_INVALID_PIPE_SIZE
-    // CL_INVALID_DEVICE_QUEUE
-    // CL_INVALID_SPEC_ID
-    // CL_MAX_SIZE_RESTRICTION_EXCEEDED
-    fprintf(stderr, "%s\nError: %d\n", message, err);
+    char *errors[] = {"Success",
+                      "Device not found",
+                      "Device not available",
+                      "Compiler not available",
+                      "Mem object allocation failure",
+                      "Out of resources",
+                      "Out of host memory",
+                      "Profiling info not available",
+                      "Mem copy overlap",
+                      "Image format mismatch",
+                      "Image format not supported",
+                      "Build program failure",
+                      "Map failure",
+                      "Misaligned sub buffer offset",
+                      "Exec status error for events in wait list",
+                      "Compile program failure",
+                      "Linker not available",
+                      "Link program failure",
+                      "Device partition failed",
+                      "Kernel arg info not available",
+                      "Invalid value",
+                      "Invalid device type",
+                      "Invalid platform",
+                      "Invalid device",
+                      "Invalid context",
+                      "Invalid queue properties",
+                      "Invalid command queue",
+                      "Invalid host ptr",
+                      "Invalid mem object",
+                      "Invalid image format descriptor",
+                      "Invalid image size",
+                      "Invalid sampler",
+                      "Invalid binary",
+                      "Invalid build options",
+                      "Invalid program",
+                      "Invalid program executable",
+                      "Invalid kernel name",
+                      "Invalid kernel definition",
+                      "Invalid kernel",
+                      "Invalid arg index",
+                      "Invalid arg value",
+                      "Invalid arg size",
+                      "Invalid kernel args",
+                      "Invalid work dimension",
+                      "Invalid work group size",
+                      "Invalid work item size",
+                      "Invalid global offset",
+                      "Invalid event wait list",
+                      "Invalid event",
+                      "Invalid operation",
+                      "Invalid gl object",
+                      "Invalid buffer size",
+                      "Invalid mip level",
+                      "Invalid global work size",
+                      "Invalid property",
+                      "Invalid image descriptor",
+                      "Invalid compiler options",
+                      "Invalid linker options",
+                      "Invalid device partition count",
+                      "Invalid pipe size",
+                      "Invalid device queue",
+                      "Invalid spec id",
+                      "Max size restriction exceeded"};
+    fprintf(stderr, "%s\nError code: %d\nError message: %s.\n", message, err, errors[-err]);
     exit(EXIT_FAILURE);
   }
 }
@@ -87,7 +86,7 @@ cl_platform_id *getPlatforms(cl_uint *numPlatforms) {
   return platforms;
 }
 
-char *getPlatformInfoParam(cl_platform_id platform, cl_platform_info paramName) {
+static char *getPlatformInfoParam(cl_platform_id platform, cl_platform_info paramName) {
   size_t paramSize;
   cl_int err = clGetPlatformInfo(platform, paramName, 0, NULL, &paramSize);
   char *str = malloc(sizeof(char) * paramSize);
@@ -111,16 +110,16 @@ cl_name_version *getPlatformExtensions(cl_platform_id platform, size_t *numExten
   return extensions;
 }
 
-unpackedVersion _unpackVersion(cl_uint version) {
-  unpackedVersion ret;
-  ret.major = (version >> 22);
-  ret.minor = (version >> 12) & ((1 << 10) - 1);
-  ret.patch = version & ((1 << 12) - 1);
-  return ret;
+static unpackedVersion unpackVersion(cl_uint version) {
+  unpackedVersion retValue;
+  retValue.major = (version >> 22);
+  retValue.minor = (version >> 12) & ((1 << 10) - 1);
+  retValue.patch = version & ((1 << 12) - 1);
+  return retValue;
 }
 
 char *versionToStr(cl_uint version) {
-  unpackedVersion unpacked = _unpackVersion(version);
+  unpackedVersion unpacked = unpackVersion(version);
   GString *retValue = g_string_new(NULL);
   g_string_append_printf(retValue, "%u.%u.%u", unpacked.major, unpacked.minor, unpacked.patch);
   return g_string_free(retValue, FALSE);
@@ -147,7 +146,7 @@ cl_device_id *getDeviceIDs(cl_platform_id platform, cl_uint *numDevices) {
   return devices;
 }
 
-void _prtArray(GArray *arr) {
+static void _prtArray(GArray *arr) {
   printf("Array holds:\n");
   for (int i = 0; i < arr->len; i++)
     printf("%s\n", g_array_index(arr, char *, i));
@@ -335,11 +334,13 @@ cl_uint getReferenceCount(cl_device_id device) {
 }
 
 cl_uint getPreferredPlatformAtomicAlignment(cl_device_id device) {
-  return getDeviceUint(device, CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT, "Couldn't get preferred platform atomic alignment.");
+  return getDeviceUint(device, CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT,
+                       "Couldn't get preferred platform atomic alignment.");
 }
 
 cl_uint getPreferredGlobalAtomicAlignment(cl_device_id device) {
-  return getDeviceUint(device, CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT, "Couldn't get preferred global atomic alignment.");
+  return getDeviceUint(device, CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT,
+                       "Couldn't get preferred global atomic alignment.");
 }
 
 cl_uint getPreferredLocalAtomicAlignment(cl_device_id device) {
