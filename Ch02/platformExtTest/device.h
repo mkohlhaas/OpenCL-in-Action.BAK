@@ -4,7 +4,14 @@
 // char *getDeviceExtensions(cl_device_id device);
 // size_t getMaxWorkItemSizes(cl_device_id device);
 
+typedef struct property {
+  gboolean enabled;
+  char *property;
+} property;
+
 // clang-format off
+GArray  *getDeviceQueueOnDeviceProperties(cl_device_id device);
+GArray  *getDeviceQueueOnHostProperties(cl_device_id device);
 GArray  *getDeviceTypes(cl_device_id device);
 char    *getDeviceBuiltInKernels(cl_device_id device);
 char    *getDeviceDriverVersion(cl_device_id device);
@@ -46,6 +53,7 @@ cl_uint  getDeviceNativeVectorWidthInt(cl_device_id device);
 cl_uint  getDeviceNativeVectorWidthLong(cl_device_id device);
 cl_uint  getDeviceNativeVectorWidthShort(cl_device_id device);
 cl_uint  getDeviceNonUniformWorkGroupSupport(cl_device_id device);
+cl_uint  getDeviceNumericVersion(cl_device_id device);
 cl_uint  getDevicePartitionMaxSubDevices(cl_device_id device);
 cl_uint  getDevicePipeMaxActiveReservations(cl_device_id device);
 cl_uint  getDevicePipeMaxPacketSize(cl_device_id device);
@@ -81,3 +89,8 @@ size_t   getDeviceMaxWorkGroupSize(cl_device_id device);
 size_t   getDevicePreferredWorkGroupSizeMultiple(cl_device_id device);
 size_t   getDevicePrintfBufferSize(cl_device_id device);
 size_t   getDeviceProfilingTimerResolution(cl_device_id device);
+cl_ulong getDeviceMaxMemAllocSize(cl_device_id device);
+cl_ulong getDeviceGlobalMemCacheSize(cl_device_id device);
+cl_ulong getDeviceGlobalMemSize(cl_device_id device);
+cl_ulong getDeviceMaxConstantBufferSize(cl_device_id device);
+cl_ulong getDeviceLocalMemSize(cl_device_id device);

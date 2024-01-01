@@ -4,6 +4,17 @@
 #include "version.h"
 #include <stdio.h>
 
+void getProperties(GArray *queueProperties, char *name, json_object *Device) {
+  json_object *QueueProperties = json_object_new_array();
+  for (int i = 0; i < queueProperties->len; i++) {
+    property queueProperty = g_array_index(queueProperties, property, i);
+    json_object *QueueProperty = json_object_new_object();
+    json_object_object_add(QueueProperty, queueProperty.property, json_object_new_boolean(queueProperty.enabled));
+    json_object_array_add(QueueProperties, QueueProperty);
+  }
+  json_object_object_add(Device, name, QueueProperties);
+}
+
 int main(void) {
 
   // set up OpenCL
@@ -123,6 +134,14 @@ int main(void) {
       cl_uint genericAddressSpaceSupport = getDeviceGenericAddressSpaceSupport(devices[i]);
       json_object_object_add(Device, "generic_address_space_support", json_object_new_boolean(genericAddressSpaceSupport));
 
+      // Global Mem Size
+      cl_ulong globalMemSize = getDeviceGlobalMemSize(devices[i]);
+      json_object_object_add(Device, "global_mem_size", json_object_new_uint64(globalMemSize));
+
+      // Global Mem Cache Size
+      cl_ulong globalMemCacheSize = getDeviceGlobalMemCacheSize(devices[i]);
+      json_object_object_add(Device, "global_mem_cache_size", json_object_new_uint64(globalMemCacheSize));
+
       // Global Mem Cacheline Size
       cl_uint globalMemCachelineSize = getDeviceGlobalMemCachelineSize(devices[i]);
       json_object_object_add(Device, "global_mem_cacheline_size", json_object_new_uint64(globalMemCachelineSize));
@@ -183,6 +202,10 @@ int main(void) {
       cl_uint linkerAvailable = getDeviceLinkerAvailable(devices[i]);
       json_object_object_add(Device, "linker_available", json_object_new_boolean(linkerAvailable));
 
+      // Local Mem Size
+      cl_ulong localMemSize = getDeviceLocalMemSize(devices[i]);
+      json_object_object_add(Device, "local_mem_size", json_object_new_uint64(localMemSize));
+
       // Max Compute Units
       cl_uint maxComputeUnits = getDeviceMaxComputeUnits(devices[i]);
       json_object_object_add(Device, "max_compute_units", json_object_new_uint64(maxComputeUnits));
@@ -195,9 +218,17 @@ int main(void) {
       cl_uint maxClockFrequency = getDeviceMaxClockFrequency(devices[i]);
       json_object_object_add(Device, "max_clock_frequency", json_object_new_uint64(maxClockFrequency));
 
+      // Max Constant Buffer Size
+      cl_ulong maxConstantBufferSize = getDeviceMaxConstantBufferSize(devices[i]);
+      json_object_object_add(Device, "max_constant_buffer_size", json_object_new_uint64(maxConstantBufferSize));
+
       // Max Global Variable Size
       size_t maxGlobalVariableSize = getDeviceMaxGlobalVariableSize(devices[i]);
       json_object_object_add(Device, "max_global_variable_size", json_object_new_uint64(maxGlobalVariableSize));
+
+      // Max Mem Alloc Size
+      cl_ulong maxMemAllocSize = getDeviceMaxMemAllocSize(devices[i]);
+      json_object_object_add(Device, "max_mem_alloc_size", json_object_new_uint64(maxMemAllocSize));
 
       // Max Num Sub Groups
       cl_uint maxNumSubGroups = getDeviceMaxNumSubGroups(devices[i]);
@@ -283,6 +314,10 @@ int main(void) {
       cl_uint nonUniformWorkGroupSupport = getDeviceNonUniformWorkGroupSupport(devices[i]);
       json_object_object_add(Device, "non_uniform_work_group_support", json_object_new_boolean(nonUniformWorkGroupSupport));
 
+      // Numeric Version
+      cl_uint numericVersion = getDeviceNumericVersion(devices[i]);
+      json_object_object_add(Device, "numeric_version", json_object_new_string(versionStr(numericVersion)));
+
       // Partition Max SubDevices
       cl_uint partitionMaxSubDevices = getDevicePartitionMaxSubDevices(devices[i]);
       json_object_object_add(Device, "partition_max_sub_devices", json_object_new_uint64(partitionMaxSubDevices));
@@ -358,6 +393,12 @@ int main(void) {
       // Queue On Device MaxSize
       cl_uint queueOnDeviceMaxSize = getDeviceQueueOnDeviceMaxSize(devices[i]);
       json_object_object_add(Device, "queue_on_device_max_size", json_object_new_uint64(queueOnDeviceMaxSize));
+
+      // Queue On Device Properties
+      getProperties(getDeviceQueueOnDeviceProperties(devices[i]), "queue_on_device_properties", Device);
+
+      // Queue On Device Properties
+      getProperties(getDeviceQueueOnHostProperties(devices[i]), "queue_on_host_properties", Device);
 
       // Queue On Device Preferred Size
       cl_uint queueOnDevicePreferredSize = getDeviceQueueOnDevicePreferredSize(devices[i]);
