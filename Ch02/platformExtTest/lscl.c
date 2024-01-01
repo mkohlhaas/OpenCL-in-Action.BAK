@@ -1,8 +1,11 @@
-#include "device.h"
+#include "deviceCL.h"
 #include "json_object.h"
-#include "platform.h"
+#include "platformCL.h"
 #include "version.h"
+#include <stdint.h>
 #include <stdio.h>
+
+// TODO; write new functions into device.c and platform.c
 
 void getProperties(GArray *queueProperties, char *name, json_object *Device) {
   json_object *QueueProperties = json_object_new_array();
@@ -17,39 +20,58 @@ void getProperties(GArray *queueProperties, char *name, json_object *Device) {
 
 int main(void) {
 
-  // set up OpenCL
-  cl_uint numPlatforms;
-  cl_platform_id *platforms = getPlatforms(&numPlatforms);
-
+  // TODO
+  // json_object *Platforms = AddPlatforms();
   json_object *Root = json_object_new_object();
   json_object *Platforms = json_object_new_array();
   json_object_object_add(Root, "platforms", Platforms);
+  // GArray(json_object *) platforms = platforms();
+  cl_uint numPlatforms;
+  cl_platform_id *platforms = getPlatforms(&numPlatforms);
 
   // Platforms
+  // TDOO: Loop over platforms (GArray)
   for (int i = 0; i < numPlatforms; i++) {
+    // TODO
+    // json_object *Platform = AddPlatform(Platforms);
     json_object *Platform = json_object_new_object();
     json_object_array_add(Platforms, Platform);
 
+    // ID
+    json_object_object_add(Platform, "id", json_object_new_uint64((intptr_t)platforms[i]));
+
+    // TODO
+    // addPlatformName(platforms[i], Platform);
     // Name
     char *platformName = getPlatformName(platforms[i]);
     json_object_object_add(Platform, "name", json_object_new_string(platformName));
 
+    // TODO
+    // addPlatformProfile(platforms[i], Platform);
     // Profile
     char *platformProfile = getPlatformProfile(platforms[i]);
     json_object_object_add(Platform, "profile", json_object_new_string(platformProfile));
 
+    // TODO
+    // addPlatformVendor(platforms[i], Platform);
     // Vendor
     char *platformVendor = getPlatformVendor(platforms[i]);
     json_object_object_add(Platform, "vendor", json_object_new_string(platformVendor));
 
+    // TODO
+    // addPlatformVersion(platforms[i], Platform);
     // Version
     char *platformVersion = getPlatformVersion(platforms[i]);
     json_object_object_add(Platform, "version", json_object_new_string(platformVersion));
 
+    // TODO
+    // addPlatformHostTimerResolution(platforms[i], Platform);
     // Host Timer Resolution
     cl_ulong htr = getPlatformHostTimerResolution(platforms[i]);
     json_object_object_add(Platform, "host_timer_resolution", json_object_new_uint64(htr));
 
+    // TODO
+    // addPlatformExtensions(platforms[i], Platform);
     // Extensions
     size_t numExtensions;
     cl_name_version *extensions = getPlatformExtensions(platforms[i], &numExtensions);
@@ -62,6 +84,8 @@ int main(void) {
     }
     json_object_object_add(Platform, "extensions", Extensions);
 
+    // TODO
+    // addPlatformDevices(platforms[i], Platform);
     // Devices
     cl_uint numDevices;
     cl_device_id *devices = getDeviceIDs(platforms[i], &numDevices);
@@ -69,22 +93,39 @@ int main(void) {
     for (int i = 0; i < numDevices; i++) {
       json_object *Device = json_object_new_object();
 
+      // ID
+      json_object_object_add(Device, "id", json_object_new_uint64((intptr_t)devices[i]));
+
+      // Platform ID
+      cl_platform_id platformID = getDevicePlatform(devices[i]);
+      json_object_object_add(Device, "platform_id", json_object_new_uint64((intptr_t)platformID));
+
+      // TODO
+      // addDeviceName(devices[i], Device);
       // Name
       char *name = getDeviceName(devices[i]);
       json_object_object_add(Device, "name", json_object_new_string(name));
 
+      // TODO
+      // addDeviceVendor(devices[i], Device);
       // Vendor
       char *vendor = getDeviceVendor(devices[i]);
       json_object_object_add(Device, "vendor", json_object_new_string(vendor));
 
+      // TODO
+      // addDeviceVersion(devices[i], Device);
       // Version
       char *version = getDeviceVersion(devices[i]);
       json_object_object_add(Device, "version", json_object_new_string(version));
 
+      // TODO
+      // addDeviceDriverVersion(devices[i], Device);
       // Driver Version
       char *driverVersion = getDeviceDriverVersion(devices[i]);
       json_object_object_add(Device, "driver_version", json_object_new_string(driverVersion));
 
+      // TODO
+      // addDeviceProfile(devices[i], Device);
       // Profile
       char *profile = getDeviceProfile(devices[i]);
       json_object_object_add(Device, "profile", json_object_new_string(profile));
@@ -98,6 +139,8 @@ int main(void) {
       // }
       // json_object_object_add(Device, "extensions", Extensions);
 
+      // TODO
+      // addDeviceTypes(devices[i], Device);
       // Types
       json_object *Types = json_object_new_array();
       GArray *deviceTypes = getDeviceTypes(devices[i]);
@@ -106,26 +149,56 @@ int main(void) {
       }
       json_object_object_add(Device, "types", Types);
 
+      // Atomic Memory Capabilities
+      getProperties(getDeviceAtomicMemoryCapabilities(devices[i]), "atomic_memory_capabilities", Device);
+
+      // Atomic Fence Capabilities
+      getProperties(getDeviceAtomicFenceCapabilities(devices[i]), "atomic_fence_capabilities", Device);
+
+      // Affinity Domain
+      getProperties(getDeviceAffinityDomain(devices[i]), "affinity_domain", Device);
+
+      // TODO
+      // addDeviceAddressBits(devices[i], Device);
       // Address Bits
       cl_uint addressBits = getDeviceAddressBits(devices[i]);
       json_object_object_add(Device, "address_bits", json_object_new_uint64(addressBits));
 
+      // TODO
+      // addDeviceAvailable(devices[i], Device);
       // Available
       cl_uint available = getDeviceAvailable(devices[i]);
       json_object_object_add(Device, "available", json_object_new_boolean(available));
 
+      // TODO
+      // addDeviceBuiltInKernels(devices[i], Device);
       // Built-In Kernels
-      char *builtInKernels = getDeviceBuiltInKernels(devices[i]);
-      json_object_object_add(Device, "built_in_kernels", json_object_new_string(builtInKernels));
+      // char *builtInKernels = getDeviceBuiltInKernels(devices[i]);
+      // json_object_object_add(Device, "built_in_kernels", json_object_new_string(builtInKernels));
 
+      // TODO
+      // addDeviceCompilerAvailable(devices[i], Device);
       // Compiler Available
       cl_uint compilerAvailable = getDeviceCompilerAvailable(devices[i]);
       json_object_object_add(Device, "compiler_available", json_object_new_boolean(compilerAvailable));
 
+      // Double FP Config
+      getProperties(getDeviceDoubleFPConfig(devices[i]), "double_fp_config", Device);
+
+      // TODO
+      // addDeviceEndianLittle(devices[i], Device);
       // Endian Little
       cl_uint endianLittle = getDeviceEndianLittle(devices[i]);
       json_object_object_add(Device, "endian_little", json_object_new_boolean(endianLittle));
 
+      // Enqueue Capabilities
+      getProperties(getDeviceEnqueueCapabilities(devices[i]), "enqueue_capabilities", Device);
+
+      // Exec Capabilities
+      getProperties(getDeviceExecCapabilities(devices[i]), "exec_capabilities", Device);
+
+      // TODO
+      // addDevice...(devices[i], Device);
       // Error Correction Support
       cl_uint errorCorrectionSupport = getDeviceErrorCorrectionSupport(devices[i]);
       json_object_object_add(Device, "error_correction_support", json_object_new_boolean(errorCorrectionSupport));
@@ -206,6 +279,9 @@ int main(void) {
       cl_ulong localMemSize = getDeviceLocalMemSize(devices[i]);
       json_object_object_add(Device, "local_mem_size", json_object_new_uint64(localMemSize));
 
+      // Local Mem Type
+      getProperties(getDeviceLocalMemType(devices[i]), "local_mem_type", Device);
+
       // Max Compute Units
       cl_uint maxComputeUnits = getDeviceMaxComputeUnits(devices[i]);
       json_object_object_add(Device, "max_compute_units", json_object_new_uint64(maxComputeUnits));
@@ -282,6 +358,9 @@ int main(void) {
       cl_uint memBaseAddrAlign = getDeviceMemBaseAddrAlign(devices[i]);
       json_object_object_add(Device, "mem_base_addr_align ", json_object_new_uint64(memBaseAddrAlign));
 
+      // Mem Cache Type
+      getProperties(getDeviceMemCacheType(devices[i]), "mem_cache_type", Device);
+
       // Native Vector Width Char
       cl_uint nativeVectorWidthChar = getDeviceNativeVectorWidthChar(devices[i]);
       json_object_object_add(Device, "native_vector_width_char", json_object_new_uint64(nativeVectorWidthChar));
@@ -317,6 +396,10 @@ int main(void) {
       // Numeric Version
       cl_uint numericVersion = getDeviceNumericVersion(devices[i]);
       json_object_object_add(Device, "numeric_version", json_object_new_string(versionStr(numericVersion)));
+
+      // Parent ID
+      cl_device_id parentId = getDeviceParentId(devices[i]);
+      json_object_object_add(Device, "parent_id", json_object_new_uint64((intptr_t)parentId));
 
       // Partition Max SubDevices
       cl_uint partitionMaxSubDevices = getDevicePartitionMaxSubDevices(devices[i]);
@@ -408,9 +491,15 @@ int main(void) {
       cl_uint referenceCount = getDeviceReferenceCount(devices[i]);
       json_object_object_add(Device, "reference_count", json_object_new_uint64(referenceCount));
 
+      // Single FP Config
+      getProperties(getDeviceSingleFPConfig(devices[i]), "single_fp_config", Device);
+
       // Sub Group Independent Forward Progress
       cl_uint subGroupIndependentForwardProgress = getDeviceSubGroupIndependentForwardProgress(devices[i]);
       json_object_object_add(Device, "sub_group_independent_forward_progress", json_object_new_boolean(subGroupIndependentForwardProgress));
+
+      // SVM Capabilities
+      getProperties(getDeviceSVMCapabilities(devices[i]), "svm_capabilities", Device);
 
       // Vendor ID
       cl_uint vendorID = getDeviceVendorID(devices[i]);
@@ -424,5 +513,5 @@ int main(void) {
     }
     json_object_object_add(Platform, "devices", Devices);
   }
-  printf("%s\n", json_object_to_json_string_ext(Root, JSON_C_TO_STRING_PRETTY));
+  printf("%s\n", json_object_to_json_string_ext(Root, JSON_C_TO_STRING_PLAIN));
 }
