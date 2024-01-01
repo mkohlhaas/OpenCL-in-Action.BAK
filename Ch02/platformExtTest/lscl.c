@@ -1,5 +1,7 @@
-#include "aux.h"
+#include "device.h"
 #include "json_object.h"
+#include "platform.h"
+#include "version.h"
 #include <stdio.h>
 
 int main(void) {
@@ -375,8 +377,7 @@ int main(void) {
 
       // Work Group Collective Functions Support
       cl_uint workGroupCollectiveFunctionsSupport = getDeviceWorkGroupCollectiveFunctionsSupport(devices[i]);
-      json_object_object_add(Device, "work_group_collective_functions_support",
-                             json_object_new_boolean(workGroupCollectiveFunctionsSupport));
+      json_object_object_add(Device, "work_group_collective_functions_support", json_object_new_boolean(workGroupCollectiveFunctionsSupport));
 
       json_object_array_add(Devices, Device);
     }
