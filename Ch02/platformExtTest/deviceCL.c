@@ -8,9 +8,10 @@ size_t *getDeviceMaxWorkItemSizes(cl_device_id device, size_t *numDims) {
   size_t paramSize;
   cl_int err = clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_ITEM_SIZES, 0, NULL, &paramSize);
   handleError(err, "Couldn't get device max work item sizes.");
-  size_t *maxWorkItemSizes = malloc(*numDims);
+  size_t *maxWorkItemSizes = malloc(paramSize);
   err = clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_ITEM_SIZES, paramSize, maxWorkItemSizes, NULL);
   handleError(err, "Couldn't get device max work item sizes.");
+  *numDims = paramSize / (sizeof(size_t));
   return maxWorkItemSizes;
 }
 
@@ -506,11 +507,9 @@ static char *getDeviceStr(cl_device_id device, cl_device_info paramName, char *e
 }
 
 cl_name_version *getDeviceNameVersion(cl_device_id device, cl_device_info paramName, char *errorMsg, size_t *numNameVersions) {
-  cl_int err = clGetDeviceInfo(device, paramName, 0, NULL, numNameVersions);
-  handleError(err, errorMsg);
+  clGetDeviceInfo(device, paramName, 0, NULL, numNameVersions);
   cl_name_version *nameVersions = malloc(*numNameVersions);
-  err = clGetDeviceInfo(device, paramName, (*numNameVersions), nameVersions, NULL);
-  handleError(err, errorMsg);
+  clGetDeviceInfo(device, paramName, (*numNameVersions), nameVersions, NULL);
   *numNameVersions /= (CL_NAME_VERSION_MAX_NAME_SIZE + sizeof(cl_version));
   return nameVersions;
 }

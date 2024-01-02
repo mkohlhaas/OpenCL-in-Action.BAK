@@ -177,6 +177,7 @@ int main(void) {
       cl_name_version *builtInKernels = getDeviceBuiltInKernels(devices[i], &numBuiltInKernels);
       json_object *BuiltInKernels = json_object_new_array();
       for (int i = 0; i < numBuiltInKernels; i++) {
+        fprintf(stderr, "%d, %s\n", i, builtInKernels[i].name);
         json_object *BuiltInKernel = json_object_new_object();
         json_object_object_add(BuiltInKernel, "name", json_object_new_string(builtInKernels[i].name));
         json_object_object_add(BuiltInKernel, "version", json_object_new_string(versionStr(builtInKernels[i].version)));
@@ -386,10 +387,10 @@ int main(void) {
       for (int i = 0; i < numDims; i++) {
         json_object *Size = json_object_new_object();
         sprintf(buffer, "%d", i);
-        json_object_object_add(Size, buffer, json_object_new_uint64(maxWorkItemSizes[i]));
+        json_object_object_add(Size, (char *)buffer, json_object_new_uint64(maxWorkItemSizes[i]));
         json_object_array_add(Sizes, Size);
       }
-      json_object_object_add(Device, "max_work_item_sizes", Ils);
+      json_object_object_add(Device, "max_work_item_sizes", Sizes);
 
       // Max Write Image Args
       cl_uint maxWriteImageArgs = getDeviceMaxWriteImageArgs(devices[i]);
@@ -448,7 +449,7 @@ int main(void) {
         json_object_object_add(C, "version", json_object_new_string(versionStr(cs[i].version)));
         json_object_array_add(Cs, C);
       }
-      json_object_object_add(Device, "opencl_c_all_versions", Ils);
+      json_object_object_add(Device, "opencl_c_all_versions", Cs);
 
       // OpenCl C Features
       size_t numCFeatures;
