@@ -177,7 +177,6 @@ int main(void) {
       cl_name_version *builtInKernels = getDeviceBuiltInKernels(devices[i], &numBuiltInKernels);
       json_object *BuiltInKernels = json_object_new_array();
       for (int i = 0; i < numBuiltInKernels; i++) {
-        fprintf(stderr, "%d, %s\n", i, builtInKernels[i].name);
         json_object *BuiltInKernel = json_object_new_object();
         json_object_object_add(BuiltInKernel, "name", json_object_new_string(builtInKernels[i].name));
         json_object_object_add(BuiltInKernel, "version", json_object_new_string(versionStr(builtInKernels[i].version)));
@@ -470,6 +469,12 @@ int main(void) {
       // Partition Max SubDevices
       cl_uint partitionMaxSubDevices = getDevicePartitionMaxSubDevices(devices[i]);
       json_object_object_add(Device, "partition_max_sub_devices", json_object_new_uint64(partitionMaxSubDevices));
+
+      // Partition Properties
+      getProperties(getDevicePartitionProperties(devices[i]), "partition_properties", Device);
+
+      // Partition Types
+      getProperties(getDevicePartitionType(devices[i]), "partition_types", Device);
 
       // Pipe Max Active Reservations
       cl_uint pipeMaxActiveReservations = getDevicePipeMaxActiveReservations(devices[i]);
