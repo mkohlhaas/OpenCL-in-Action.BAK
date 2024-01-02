@@ -173,8 +173,16 @@ int main(void) {
       // TODO
       // addDeviceBuiltInKernels(devices[i], Device);
       // Built-In Kernels
-      // char *builtInKernels = getDeviceBuiltInKernels(devices[i]);
-      // json_object_object_add(Device, "built_in_kernels", json_object_new_string(builtInKernels));
+      size_t numBuiltInKernels;
+      cl_name_version *builtInKernels = getDeviceBuiltInKernels(devices[i], &numBuiltInKernels);
+      json_object *BuiltInKernels = json_object_new_array();
+      for (int i = 0; i < numBuiltInKernels; i++) {
+        json_object *BuiltInKernel = json_object_new_object();
+        json_object_object_add(BuiltInKernel, "name", json_object_new_string(builtInKernels[i].name));
+        json_object_object_add(BuiltInKernel, "version", json_object_new_string(versionStr(builtInKernels[i].version)));
+        json_object_array_add(BuiltInKernels, BuiltInKernel);
+      }
+      json_object_object_add(Device, "built_in_kernels", BuiltInKernels);
 
       // TODO
       // addDeviceCompilerAvailable(devices[i], Device);
@@ -194,14 +202,26 @@ int main(void) {
       // Enqueue Capabilities
       getProperties(getDeviceEnqueueCapabilities(devices[i]), "enqueue_capabilities", Device);
 
-      // Exec Capabilities
-      getProperties(getDeviceExecCapabilities(devices[i]), "exec_capabilities", Device);
-
       // TODO
       // addDevice...(devices[i], Device);
       // Error Correction Support
       cl_uint errorCorrectionSupport = getDeviceErrorCorrectionSupport(devices[i]);
       json_object_object_add(Device, "error_correction_support", json_object_new_boolean(errorCorrectionSupport));
+
+      // Exec Capabilities
+      getProperties(getDeviceExecCapabilities(devices[i]), "exec_capabilities", Device);
+
+      // Extensions
+      size_t numDeviceExtensions;
+      cl_name_version *extensions = getDeviceExtensionsWithVersion(devices[i], &numDeviceExtensions);
+      json_object *Extensions = json_object_new_array();
+      for (int i = 0; i < numDeviceExtensions; i++) {
+        json_object *Extension = json_object_new_object();
+        json_object_object_add(Extension, "name", json_object_new_string(extensions[i].name));
+        json_object_object_add(Extension, "version", json_object_new_string(versionStr(extensions[i].version)));
+        json_object_array_add(Extensions, Extension);
+      }
+      json_object_object_add(Device, "extensions", Extensions);
 
       // Generic Address Space Support
       cl_uint genericAddressSpaceSupport = getDeviceGenericAddressSpaceSupport(devices[i]);
@@ -226,6 +246,18 @@ int main(void) {
       // Il Version
       char *ilVersion = getDeviceIlVersion(devices[i]);
       json_object_object_add(Device, "il_version", json_object_new_string(ilVersion));
+
+      // Ils
+      size_t numIls;
+      cl_name_version *ils = getDeviceIlsWithVersion(devices[i], &numIls);
+      json_object *Ils = json_object_new_array();
+      for (int i = 0; i < numIls; i++) {
+        json_object *Il = json_object_new_object();
+        json_object_object_add(Il, "name", json_object_new_string(ils[i].name));
+        json_object_object_add(Il, "version", json_object_new_string(versionStr(ils[i].version)));
+        json_object_array_add(Ils, Il);
+      }
+      json_object_object_add(Device, "ils", Ils);
 
       // Image Base Address Alignment
       cl_uint imageBaseAddressAlignment = getDeviceImageBaseAddressAlignment(devices[i]);
@@ -338,17 +370,26 @@ int main(void) {
       cl_uint maxSamplers = getDeviceMaxSamplers(devices[i]);
       json_object_object_add(Device, "max_samplers", json_object_new_uint64(maxSamplers));
 
+      // Max Work Group Size
+      size_t maxWorkGroupSize = getDeviceMaxWorkGroupSize(devices[i]);
+      json_object_object_add(Device, "max_work_group_size", json_object_new_uint64(maxWorkGroupSize));
+
       // Max Work Item Dimensions
       cl_uint maxWorkItemDimensions = getDeviceMaxComputeUnits(devices[i]);
       json_object_object_add(Device, "max_work_item_dimensions", json_object_new_uint64(maxWorkItemDimensions));
 
       // Max Work Item Sizes
-      // size_t maxWorkItemSizes = getMaxWorkItemSizes(devices[i]);
-      // json_object_object_add(Device, "max_work_item_sizes", json_object_new_uint64(maxWorkItemSizes));
-
-      // Max Work Group Size
-      size_t maxWorkGroupSize = getDeviceMaxWorkGroupSize(devices[i]);
-      json_object_object_add(Device, "max_work_group_size", json_object_new_uint64(maxWorkGroupSize));
+      char buffer[12];
+      size_t numDims;
+      size_t *maxWorkItemSizes = getDeviceMaxWorkItemSizes(devices[i], &numDims);
+      json_object *Sizes = json_object_new_array();
+      for (int i = 0; i < numDims; i++) {
+        json_object *Size = json_object_new_object();
+        sprintf(buffer, "%d", i);
+        json_object_object_add(Size, buffer, json_object_new_uint64(maxWorkItemSizes[i]));
+        json_object_array_add(Sizes, Size);
+      }
+      json_object_object_add(Device, "max_work_item_sizes", Ils);
 
       // Max Write Image Args
       cl_uint maxWriteImageArgs = getDeviceMaxWriteImageArgs(devices[i]);
@@ -396,6 +437,30 @@ int main(void) {
       // Numeric Version
       cl_uint numericVersion = getDeviceNumericVersion(devices[i]);
       json_object_object_add(Device, "numeric_version", json_object_new_string(versionStr(numericVersion)));
+
+      // OpenCl C All Versions
+      size_t numC;
+      cl_name_version *cs = getDeviceOpenClCAllVersions(devices[i], &numC);
+      json_object *Cs = json_object_new_array();
+      for (int i = 0; i < numC; i++) {
+        json_object *C = json_object_new_object();
+        json_object_object_add(C, "name", json_object_new_string(cs[i].name));
+        json_object_object_add(C, "version", json_object_new_string(versionStr(cs[i].version)));
+        json_object_array_add(Cs, C);
+      }
+      json_object_object_add(Device, "opencl_c_all_versions", Ils);
+
+      // OpenCl C Features
+      size_t numCFeatures;
+      cl_name_version *cfs = getDeviceOpenClCFeatures(devices[i], &numCFeatures);
+      json_object *Cfs = json_object_new_array();
+      for (int i = 0; i < numCFeatures; i++) {
+        json_object *Cf = json_object_new_object();
+        json_object_object_add(Cf, "name", json_object_new_string(cfs[i].name));
+        json_object_object_add(Cf, "version", json_object_new_string(versionStr(cfs[i].version)));
+        json_object_array_add(Cfs, Cf);
+      }
+      json_object_object_add(Device, "opencl_c_features", Cfs);
 
       // Parent ID
       cl_device_id parentId = getDeviceParentId(devices[i]);
